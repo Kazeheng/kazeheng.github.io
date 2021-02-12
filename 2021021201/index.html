@@ -1,0 +1,307 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>linux服务器上mysql的卸载与安装 | Kazeheng</title>
+<link rel="shortcut icon" href="https://kazeheng.github.io//favicon.ico?v=1613136280760">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://kazeheng.github.io//styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="linux服务器上mysql的卸载与安装 | Kazeheng - Atom Feed" href="https://kazeheng.github.io//atom.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+
+
+
+    <meta name="description" content="在我把写好的javaweb项目部署到服务器上的时候，之前测试好的方法都出现了错误。将项目在本地运行发现，请求数据库出现了问题，后来通过排查，最终的问题锁定在了mysql的版本不同导致的访问失败。
+因为我本地的数据库是mysql5.7的版本，..." />
+    <meta name="keywords" content="数据库,笔记" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+    <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://kazeheng.github.io/">
+  <img class="avatar" src="https://kazeheng.github.io//images/avatar.png?v=1613136280760" alt="">
+  </a>
+  <h1 class="site-title">
+    Kazeheng
+  </h1>
+  <p class="site-description">
+    给时间以生命
+  </p>
+  <div class="menu-container">
+    
+      
+        <a href="/" class="menu">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="social-container">
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</div>
+
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              linux服务器上mysql的卸载与安装
+            </h2>
+            <div class="post-info">
+              <span>
+                2021-02-12
+              </span>
+              <span>
+                5 min read
+              </span>
+              
+                <a href="https://kazeheng.github.io/SFeGEUMiA/" class="post-tag">
+                  # 数据库
+                </a>
+              
+                <a href="https://kazeheng.github.io/Ga6U7_ZCGX/" class="post-tag">
+                  # 笔记
+                </a>
+              
+            </div>
+            
+              <img class="post-feature-image" src="https://kazeheng.github.io//post-images/2021021201.jpg" alt="">
+            
+            <div class="post-content-wrapper">
+              <div class="post-content">
+                <p>在我把写好的javaweb项目部署到服务器上的时候，之前测试好的方法都出现了错误。将项目在本地运行发现，请求数据库出现了问题，后来通过排查，最终的问题锁定在了mysql的版本不同导致的访问失败。</p>
+<p>因为我本地的数据库是mysql5.7的版本，整个项目的依赖和代码也完全是按照mysql5.7来写的。通过上网查询，从5.7改为8.0的版本，有很多要改的地方。目前已知的有驱动的修改，依赖修改和配置文件中url的修改等。所以在考虑之后决定仍然使用本地5.7的数据库。重装服务器上的mysql。</p>
+<h1 id="linux服务器上的mysql卸载">Linux服务器上的mysql卸载</h1>
+<ol>
+<li>通过命令查看centos上已经安装的mysql</li>
+</ol>
+<pre><code class="language-shell">rpm -qa | grep -i mysql
+</code></pre>
+<ol start="2">
+<li>通过yum命令删除mysql</li>
+</ol>
+<pre><code class="language-shell">yum -y remove MySQL-*
+</code></pre>
+<p>网上的一般用rpm -e 的命令删除mysql,这样表面上删除了mysql,可是mysql的一些残余程序仍然存在,并且通过第一步的方式也查找不到残余,而yum命令比较强大,可以完全删除mysql.(ps:用rpm删除后再次安装的时候会提示已经安装了,这就是rpm没删除干净的原因)</p>
+<ol start="3">
+<li>把mysql相关的文件删掉</li>
+</ol>
+<pre><code class="language-shell"> find / -name mysql
+</code></pre>
+<p>上述命令查找所有带mysql的文件和文件夹，依次用 <code>rm -rf</code>+路径的方式删掉</p>
+<ol start="4">
+<li>删除配置文件和默认密码</li>
+</ol>
+<pre><code class="language-shell">rm -rf /etc/my.cnf
+rm -rf /root/.mysql_sercret
+</code></pre>
+<p>删除mysql的默认密码,如果不删除,以后安装mysql这个sercret中的默认密码不会变,使用其中的默认密码就可能会报类似Access denied for user 'root@localhost' (using password:yes)的错误.</p>
+<p>五步完成之后,这样mysql就全部删除干净了.</p>
+<h1 id="57版本mysql的安装">5.7版本mysql的安装</h1>
+<p>卸载完成之后，开始安装5.7版本的mysql</p>
+<h2 id="下载安装包">下载安装包</h2>
+<p>先在官网上下载安装包</p>
+<p>https://dev.mysql.com/downloads/mysql/5.7.html#downloads</p>
+<figure data-type="image" tabindex="1"><img src="http://fengheng430.gitee.io/picbed/pic/0212-1.png" alt="0212-1" loading="lazy"></figure>
+<h2 id="传输到服务器并配置">传输到服务器并配置</h2>
+<p>传到服务器上，并且解压</p>
+<pre><code class="language-shell">tar -zxvf mysql-5.7.26-linux-glibc2.12-x86_64.tar 
+</code></pre>
+<p>解压完成之后查看一下文件夹存在，就可以把压缩包删了,</p>
+<figure data-type="image" tabindex="2"><img src="http://fengheng430.gitee.io/picbed/pic/0212-2.png" alt="0212-2" loading="lazy"></figure>
+<p>给文件夹重新起一个好记的名字，并且移动一下</p>
+<pre><code class="language-shell">mv mysql-5.7.26-linux-glibc2.12-x86_64 /usr/local/mysql
+</code></pre>
+<p>创建mysql用户组和用户并修改权限</p>
+<pre><code class="language-shell">groupadd mysql
+useradd -r -g mysql mysql
+</code></pre>
+<p>再写一个my.cnf文件，放到/etc/，内容如下：</p>
+<pre><code>[mysqld]
+bind-address=0.0.0.0
+port=3306
+user=mysql
+basedir=/usr/local/mysql
+datadir=/data/mysql
+socket=/tmp/mysql.sock
+log-error=/data/mysql/mysql.err
+pid-file=/data/mysql/mysql.pid
+#character config
+character_set_server=utf8mb4
+symbolic-links=0
+explicit_defaults_for_timestamp=true
+</code></pre>
+<h2 id="初始化数据库">初始化数据库</h2>
+<p>接下来就可以初始化数据库了</p>
+<p>先进入bin目录</p>
+<pre><code class="language-shell">cd /usr/local/mysql/bin/	
+</code></pre>
+<p>初始化mysql</p>
+<pre><code class="language-shell">./mysqld --defaults-file=/etc/my.cnf --basedir=/usr/local/mysql/ --datadir=/data/mysql/ --user=mysql --initialize
+</code></pre>
+<p>查看密码</p>
+<pre><code class="language-shell">cat /data/mysql/mysql.err
+</code></pre>
+<figure data-type="image" tabindex="3"><img src="http://fengheng430.gitee.io/picbed/pic/0212-3.png" alt="0212-3" loading="lazy"></figure>
+<p>系统会生成一个默认的巨复杂的密码，复制出来备用。</p>
+<p>现在就可以启动mysql了，先将mysql.server放置到/etc/init.d/mysql中.</p>
+<pre><code class="language-shell">cp /usr/local/mysql/support-files/mysql.server /etc/init.d/mysql
+</code></pre>
+<h2 id="启动mysql">启动mysql</h2>
+<pre><code class="language-shell">service mysql start
+ 
+ps -ef|grep mysql
+ 
+</code></pre>
+<figure data-type="image" tabindex="4"><img src="http://fengheng430.gitee.io/picbed/pic/0212-4.png" alt="0212-4" loading="lazy"></figure>
+<p>出现类似于上图的success提示，安装就成功了。</p>
+<p>之后要做的就是修改密码。</p>
+<p>在bin目录下</p>
+<pre><code class="language-shell">./mysql -u root -p   #bin目录下
+</code></pre>
+<p>把刚才保存的巨复杂的密码粘上去，就可以登陆了。</p>
+<p>有的时候会报错：./mysql: error while loading shared libraries: libncurses.so.5: cannot open shared object file: No such file or d</p>
+<p>具体原因不明，但是可以通过下面的代码解决。</p>
+<pre><code class="language-shell">yum install libncurses*
+</code></pre>
+<p>会询问你是否ok，输入个y就行了</p>
+<h2 id="修改密码和远程连接权限">修改密码和远程连接权限</h2>
+<p>执行下面三步操作，之后重新登陆。</p>
+<pre><code class="language-sql">SET PASSWORD = PASSWORD('123456');
+ALTER USER 'root'@'localhost' PASSWORD EXPIRE NEVER;
+FLUSH PRIVILEGES;                                 
+</code></pre>
+<p>想要远程连接，还需更改root用户的连接权限</p>
+<pre><code class="language-sql">use mysql                                            #访问mysql库
+update user set host = '%' where user = 'root';      #使root能再任何host访问
+FLUSH PRIVILEGES;                                    #刷新
+</code></pre>
+<p>如果不希望每次都到bin目录下使用mysql命令则在shell中执行以下命令</p>
+<pre><code class="language-shell">ln -s  /usr/local/mysql/bin/mysql    /usr/bin
+</code></pre>
+<p>至此mysql5.7就安装好啦！</p>
+<p>8.0的坑是真的多，好好的项目就是运行不了，把数据库换成5.7之后，所有的问题都解决了。</p>
+<p>把安装步骤记录于此，之后如有类似问题再进行查看和补充。</p>
+<p>参考文档：</p>
+<ol>
+<li><a href="https://blog.csdn.net/weixin_43865493/article/details/102764308">部署MySQL数据库的项目从5.0更改到8.0版本需要做的修改</a></li>
+<li><a href="https://www.cnblogs.com/leelice/p/10728129.html">centos彻底卸载mysql（不保留数据）</a></li>
+<li><a href="https://blog.csdn.net/qq_37598011/article/details/93489404">Linux安装MySQL5.7</a></li>
+<li><a href="https://blog.csdn.net/weixin_43849519/article/details/104832300">dolphin0516</a></li>
+</ol>
+
+              </div>
+              <div class="toc-container">
+                <ul class="markdownIt-TOC">
+<li><a href="#linux%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E7%9A%84mysql%E5%8D%B8%E8%BD%BD">Linux服务器上的mysql卸载</a></li>
+<li><a href="#57%E7%89%88%E6%9C%ACmysql%E7%9A%84%E5%AE%89%E8%A3%85">5.7版本mysql的安装</a>
+<ul>
+<li><a href="#%E4%B8%8B%E8%BD%BD%E5%AE%89%E8%A3%85%E5%8C%85">下载安装包</a></li>
+<li><a href="#%E4%BC%A0%E8%BE%93%E5%88%B0%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%B9%B6%E9%85%8D%E7%BD%AE">传输到服务器并配置</a></li>
+<li><a href="#%E5%88%9D%E5%A7%8B%E5%8C%96%E6%95%B0%E6%8D%AE%E5%BA%93">初始化数据库</a></li>
+<li><a href="#%E5%90%AF%E5%8A%A8mysql">启动mysql</a></li>
+<li><a href="#%E4%BF%AE%E6%94%B9%E5%AF%86%E7%A0%81%E5%92%8C%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5%E6%9D%83%E9%99%90">修改密码和远程连接权限</a></li>
+</ul>
+</li>
+</ul>
+
+              </div>
+            </div>
+          </article>
+        </div>
+
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://kazeheng.github.io/hello-gridea/">
+              <h3 class="post-title">
+                Hello Gridea
+              </h3>
+            </a>
+          </div>
+        
+
+        
+
+        <div class="site-footer">
+  不恒其德，或承之羞
+  <a class="rss" href="https://kazeheng.github.io//atom.xml" target="_blank">
+    <i class="ri-rss-line"></i> RSS
+  </a>
+</div>
+
+      </div>
+    </div>
+
+    <script>
+      hljs.initHighlightingOnLoad()
+
+      let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
+
+      // This should probably be throttled.
+      // Especially because it triggers during smooth scrolling.
+      // https://lodash.com/docs/4.17.10#throttle
+      // You could do like...
+      // window.addEventListener("scroll", () => {
+      //    _.throttle(doThatStuff, 100);
+      // });
+      // Only not doing it here to keep this Pen dependency-free.
+
+      window.addEventListener("scroll", event => {
+        let fromTop = window.scrollY;
+
+        mainNavLinks.forEach((link, index) => {
+          let section = document.getElementById(decodeURI(link.hash).substring(1));
+          let nextSection = null
+          if (mainNavLinks[index + 1]) {
+            nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+          }
+          if (section.offsetTop <= fromTop) {
+            if (nextSection) {
+              if (nextSection.offsetTop > fromTop) {
+                link.classList.add("current");
+              } else {
+                link.classList.remove("current");    
+              }
+            } else {
+              link.classList.add("current");
+            }
+          } else {
+            link.classList.remove("current");
+          }
+        });
+      });
+
+    </script>
+  </body>
+</html>
